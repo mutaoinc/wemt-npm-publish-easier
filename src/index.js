@@ -5,10 +5,8 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSyn
 import { join, resolve } from "path";
 import { cp } from "fs/promises";
 
-// 根目录路径
 const ROOT_PATH = resolve(process.cwd());
 
-// 创建初始配置文件
 function createInitialConfig() {
     const configContent = `export default {
     // 构建命令
@@ -59,23 +57,22 @@ function createInitialConfig() {
     const configPath = join(ROOT_PATH, "publish.config.js");
 
     if (existsSync(configPath)) {
-        console.log("⚠️  配置文件已存在：publish.config.js");
-        console.log("如需重新初始化，请先删除现有配置文件。");
+        console.log("⚠️  Configuration file already exists: publish.config.js");
+        console.log("If you need to reinitialize, please delete the existing configuration file first.");
         return false;
     }
 
     try {
         writeFileSync(configPath, configContent);
-        console.log("✅ 初始化配置文件已创建：publish.config.js");
-        console.log("📝 请根据项目需要修改配置文件后再次运行工具。");
+        console.log("✅ Initial configuration file created: publish.config.js");
+        console.log("📝 Please modify the configuration file according to your project needs before running the tool again.");
         return true;
     } catch (error) {
-        console.error("❌ 创建配置文件失败：", error.message);
+        console.error("❌ Failed to create configuration file:", error.message);
         return false;
     }
 }
 
-// 加载用户配置
 async function loadUserConfig() {
     const configPaths = [
         join(ROOT_PATH, "publish.config.js")
@@ -98,63 +95,59 @@ async function loadUserConfig() {
         }
     }
 
-    // 没有找到任何配置文件
     return {};
 }
 
-// 清理发布目录
 function cleanPublishDirectory(publishPath, publishDir) {
     if (!publishDir) {
-        console.log("⚠️  Warning: 无法清理当前目录，请指定发布目录");
+        console.log("⚠️  Warning: Cannot clean current directory, please specify publish directory");
         return false;
     }
 
     if (!existsSync(publishPath)) {
-        console.log("📂 发布目录不存在，无需清理");
+        console.log("📂 Publish directory does not exist, no need to clean");
         return true;
     }
 
     try {
-        console.log(`🧹 正在清理发布目录: ${publishDir}`);
+        console.log(`🧹 Cleaning publish directory: ${publishDir}`);
         rmSync(publishPath, { recursive: true, force: true });
-        console.log("✅ 发布目录清理完成");
+        console.log("✅ Publish directory cleaned successfully");
         return true;
     } catch (error) {
-        console.error("❌ 清理发布目录失败：", error.message);
+        console.error("❌ Failed to clean publish directory:", error.message);
         return false;
     }
 }
 
-// 删除.tgz文件（跨平台兼容）
 function cleanTgzFiles(publishPath) {
     try {
         const files = readdirSync(publishPath);
         const tgzFiles = files.filter(file => file.endsWith('.tgz'));
-        
+
         if (tgzFiles.length === 0) {
             return;
         }
 
-        console.log(`🧹 正在清理临时文件...`);
+        console.log(`🧹 Cleaning temporary files...`);
         for (const file of tgzFiles) {
             try {
                 rmSync(join(publishPath, file));
-                console.log(`   已删除: ${file}`);
+                console.log(`   Deleted: ${file}`);
             } catch (error) {
-                console.warn(`⚠️  Warning: 无法删除文件 ${file}:`, error.message);
+                console.warn(`⚠️  Warning: Cannot delete file ${file}:`, error.message);
             }
         }
-        console.log("✅ 临时文件清理完成");
+        console.log("✅ Temporary files cleaned successfully");
     } catch (error) {
-        console.warn("⚠️  Warning: 清理临时文件时出错:", error.message);
+        console.warn("⚠️  Warning: Error occurred while cleaning temporary files:", error.message);
     }
 }
 
-// 解析命令行参数
 function parseArgs() {
     const args = {
-        autoPublish: false,      // -y 或 --yes
-        incrementVersion: null,  // --increment-version 或 --no-increment-version
+        autoPublish: false,      // -y or --yes
+        incrementVersion: null,  // --increment-version or --no-increment-version
         buildCommand: null,      // --build-command
         help: false,            // --help
         init: false,            // --init
@@ -195,45 +188,40 @@ function parseArgs() {
     return args;
 }
 
-// 显示帮助信息
 function showHelp() {
     console.log(`
 📦 NPM 发布助手 (npm-publish-easier)
 
-使用方法:
-  npm-publish-easier [选项]
+Usage:
+    npm-publish-easier [options]
 
-选项:
-  --init                      创建初始配置文件 (publish.config.js)
-  --clean                     清理发布目录
-  -y, --yes                   自动发布到 npm（包含版本递增）
-  --increment-version         强制递增版本号（不发布）
-  --no-increment-version      不递增版本号
-  --build-command <command>   自定义构建命令
-  -h, --help                  显示帮助信息
+Options:
+    --init                      创建初始配置文件 (publish.config.js)
+    --clean                     清理发布目录
+    -y, --yes                   自动发布到 npm（包含版本递增）
+    --increment-version         强制递增版本号（不发布）
+    --no-increment-version      不递增版本号
+    --build-command <command>   自定义构建命令
+    -h, --help                  显示帮助信息
 
-示例:
-  npm-publish-easier --init                 # 创建初始配置文件
-  npm-publish-easier --clean                # 清理发布目录
-  npm-publish-easier                        # 准备发布文件
-  npm-publish-easier -y                     # 自动发布
-  npm-publish-easier --increment-version    # 仅递增版本号
-  npm-publish-easier --build-command "npm run build"  # 自定义构建命令
+Examples:
+    npm-publish-easier --init                 # 创建初始配置文件
+    npm-publish-easier --clean                # 清理发布目录
+    npm-publish-easier                        # 准备发布文件
+    npm-publish-easier -y                     # 自动发布
+    npm-publish-easier --increment-version    # 仅递增版本号
+    npm-publish-easier --build-command "npm run build"  # 自定义构建命令
 
-配置文件:
-  支持配置文件：publish.config.js
-  
-  首次使用请运行: npm-publish-easier --init
+Configuration file:
+    首次使用请运行: npm-publish-easier --init
 `);
 }
 
-// 增加版本号
 function incrementVersion(version) {
     const [major, minor, patch] = version.split(".").map(Number);
     return `${major}.${minor}.${patch + 1}`;
 }
 
-// 执行命令
 function execCommand(command, options = {}) {
     try {
         execSync(command, { stdio: "inherit", ...options });
@@ -243,7 +231,6 @@ function execCommand(command, options = {}) {
     }
 }
 
-// 复制文件或目录
 async function copyFiles(copyConfig, publishPath) {
     for (const config of copyConfig) {
         console.log(`📦 Copying ${config.description}...`);
@@ -251,7 +238,6 @@ async function copyFiles(copyConfig, publishPath) {
             const source = join(ROOT_PATH, config.source);
             const target = join(publishPath, config.target);
 
-            // 检查源文件是否存在
             if (!existsSync(source)) {
                 console.warn(`⚠️  Warning: Source file/directory not found: ${config.source}`);
                 continue;
@@ -269,7 +255,6 @@ async function copyFiles(copyConfig, publishPath) {
     }
 }
 
-// 更新 package.json
 function updatePackageJson(packageJson, newVersion, filteredConfig, publishPath, shouldUpdateMainVersion = true) {
     if (newVersion !== packageJson.version) {
         console.log(`📝 Updating version from ${packageJson.version} to ${newVersion}`);
@@ -289,11 +274,9 @@ function updatePackageJson(packageJson, newVersion, filteredConfig, publishPath,
         ),
     };
 
-    // 写入发布用的 package.json
     writeFileSync(join(publishPath, "package.json"), JSON.stringify(publishPackageJson, null, 2));
     console.log("✅ Package.json for publish created");
 
-    // 更新主项目的 package.json（仅在需要时）
     if (shouldUpdateMainVersion && newVersion !== packageJson.version) {
         packageJson.version = newVersion;
         writeFileSync(join(ROOT_PATH, "package.json"), JSON.stringify(packageJson, null, 2));
@@ -324,7 +307,7 @@ async function main() {
             const userConfig = await loadUserConfig();
             const publishDir = userConfig.publishDir !== undefined ? userConfig.publishDir : "publish";
             const publishPath = publishDir ? join(ROOT_PATH, publishDir) : ROOT_PATH;
-            
+
             const success = cleanPublishDirectory(publishPath, publishDir);
             process.exit(success ? 0 : 1);
         }
@@ -336,8 +319,8 @@ async function main() {
 
         // 检查是否有配置文件
         if (!userConfig || Object.keys(userConfig).length === 0) {
-            console.error("❌ 未找到配置文件！");
-            console.log("📝 请先运行以下命令创建配置文件：");
+            console.error("❌ No configuration file found!");
+            console.log("📝 Please run the following command to create a configuration file first:");
             console.log("   npm-publish-easier --init");
             process.exit(1);
         }
@@ -352,8 +335,8 @@ async function main() {
 
         // 验证必要的配置
         if (!finalConfig.buildCommand) {
-            console.error("❌ 配置错误：未指定构建命令！");
-            console.log("📝 请在配置文件中设置 buildCommand，例如：");
+            console.error("❌ Configuration error: No build command specified!");
+            console.log("📝 Please set buildCommand in the configuration file, for example:");
             console.log('   buildCommand: "rollup -c"');
             process.exit(1);
         }
@@ -361,11 +344,11 @@ async function main() {
         // 计算发布路径
         const PUBLISH_PATH = finalConfig.publishDir ? join(ROOT_PATH, finalConfig.publishDir) : ROOT_PATH;
 
-        console.log(`📋 使用配置：`);
-        console.log(`   构建命令: ${finalConfig.buildCommand}`);
-        console.log(`   发布目录: ${finalConfig.publishDir || '当前目录'}`);
-        console.log(`   复制文件: ${finalConfig.copyConfig.length} 项`);
-        console.log(`   过滤配置: ${Object.keys(finalConfig.filteredConfig).length} 类`);
+        console.log(`📋 Using configuration:`);
+        console.log(`   Build command: ${finalConfig.buildCommand}`);
+        console.log(`   Publish directory: ${finalConfig.publishDir || 'current directory'}`);
+        console.log(`   Copy files: ${finalConfig.copyConfig.length} items`);
+        console.log(`   Filter config: ${Object.keys(finalConfig.filteredConfig).length} types`);
         console.log("");
 
         // 清理并创建发布目录
@@ -418,18 +401,10 @@ async function main() {
 
         // 自动发布
         if (args.autoPublish) {
-            // 打包
-            console.log("📦 Creating npm package...");
-            execCommand("npm pack", { cwd: PUBLISH_PATH });
-            console.log("✅ Package created");
-
-            // 发布
+            // 直接发布（npm publish 会自动打包，不会留下 .tgz 文件）
             console.log("🚀 Publishing to npm...");
             execCommand("npm publish", { cwd: PUBLISH_PATH });
             console.log("✅ Package published successfully!");
-
-            // 删除打包的文件（使用跨平台兼容的方法）
-            cleanTgzFiles(PUBLISH_PATH);
         }
 
         console.log("🎉 Process completed successfully!");
