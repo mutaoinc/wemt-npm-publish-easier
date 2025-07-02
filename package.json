@@ -1,15 +1,16 @@
 {
   "name": "@wemt/npm-publish-easier",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "一个简化npm包发布流程助手工具，支持自动构建、版本管理、文件复制和发布。",
   "main": "index.js",
   "bin": {
     "npm-publish-easier": "index.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "publish": "node src/index.js -y",
-    "publish:prepare": "node src/index.js"
+    "publish": "npm-publish-easier -y",
+    "publish:prepare": "npm-publish-easier",
+    "publish:init": "npm-publish-easier --init",
+    "publish:clean": "npm-publish-easier --clean"
   },
   "keywords": [
     "npm",
@@ -35,6 +36,7 @@
     "url": "https://github.com/mutaoinc/npm-publish-easier/issues"
   },
   "devDependencies": {
+    "@wemt/npm-publish-easier": "^1.1.7",
     "rollup": "^4.44.1"
   },
   "publishConfig": {

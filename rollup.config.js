@@ -3,7 +3,7 @@ export default {
     output: {
         file: 'publish/index.js',
         format: 'esm',
-        banner: '#!/usr/bin/env node'
+        banner: '#!/usr/bin/env node\n'
     },
     external: [
         'child_process',
