@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from "child_process";
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync } from "fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync } from "fs";
 import { join, resolve } from "path";
 import { cp } from "fs/promises";
 
@@ -102,6 +102,54 @@ async function loadUserConfig() {
     return {};
 }
 
+// 清理发布目录
+function cleanPublishDirectory(publishPath, publishDir) {
+    if (!publishDir) {
+        console.log("⚠️  Warning: 无法清理当前目录，请指定发布目录");
+        return false;
+    }
+
+    if (!existsSync(publishPath)) {
+        console.log("📂 发布目录不存在，无需清理");
+        return true;
+    }
+
+    try {
+        console.log(`🧹 正在清理发布目录: ${publishDir}`);
+        rmSync(publishPath, { recursive: true, force: true });
+        console.log("✅ 发布目录清理完成");
+        return true;
+    } catch (error) {
+        console.error("❌ 清理发布目录失败：", error.message);
+        return false;
+    }
+}
+
+// 删除.tgz文件（跨平台兼容）
+function cleanTgzFiles(publishPath) {
+    try {
+        const files = readdirSync(publishPath);
+        const tgzFiles = files.filter(file => file.endsWith('.tgz'));
+        
+        if (tgzFiles.length === 0) {
+            return;
+        }
+
+        console.log(`🧹 正在清理临时文件...`);
+        for (const file of tgzFiles) {
+            try {
+                rmSync(join(publishPath, file));
+                console.log(`   已删除: ${file}`);
+            } catch (error) {
+                console.warn(`⚠️  Warning: 无法删除文件 ${file}:`, error.message);
+            }
+        }
+        console.log("✅ 临时文件清理完成");
+    } catch (error) {
+        console.warn("⚠️  Warning: 清理临时文件时出错:", error.message);
+    }
+}
+
 // 解析命令行参数
 function parseArgs() {
     const args = {
@@ -110,6 +158,7 @@ function parseArgs() {
         buildCommand: null,      // --build-command
         help: false,            // --help
         init: false,            // --init
+        clean: false,           // --clean
     };
 
     for (let i = 2; i < process.argv.length; i++) {
@@ -137,6 +186,9 @@ function parseArgs() {
             case '--init':
                 args.init = true;
                 break;
+            case '--clean':
+                args.clean = true;
+                break;
         }
     }
 
@@ -153,6 +205,7 @@ function showHelp() {
 
 选项:
   --init                      创建初始配置文件 (publish.config.js)
+  --clean                     清理发布目录
   -y, --yes                   自动发布到 npm（包含版本递增）
   --increment-version         强制递增版本号（不发布）
   --no-increment-version      不递增版本号
@@ -161,6 +214,7 @@ function showHelp() {
 
 示例:
   npm-publish-easier --init                 # 创建初始配置文件
+  npm-publish-easier --clean                # 清理发布目录
   npm-publish-easier                        # 准备发布文件
   npm-publish-easier -y                     # 自动发布
   npm-publish-easier --increment-version    # 仅递增版本号
@@ -264,6 +318,17 @@ async function main() {
             process.exit(success ? 0 : 1);
         }
 
+        // 处理清理命令
+        if (args.clean) {
+            // 加载用户配置以获取发布目录
+            const userConfig = await loadUserConfig();
+            const publishDir = userConfig.publishDir !== undefined ? userConfig.publishDir : "publish";
+            const publishPath = publishDir ? join(ROOT_PATH, publishDir) : ROOT_PATH;
+            
+            const success = cleanPublishDirectory(publishPath, publishDir);
+            process.exit(success ? 0 : 1);
+        }
+
         console.log("🚀 Starting publish process...");
 
         // 加载用户配置
@@ -363,13 +428,8 @@ async function main() {
             execCommand("npm publish", { cwd: PUBLISH_PATH });
             console.log("✅ Package published successfully!");
 
-            // 删除打包的文件
-            try {
-                execCommand("rm *.tgz", { cwd: PUBLISH_PATH });
-            } catch (error) {
-                // 忽略删除失败的错误
-            }
-            console.log("✅ Temporary files cleaned");
+            // 删除打包的文件（使用跨平台兼容的方法）
+            cleanTgzFiles(PUBLISH_PATH);
         }
 
         console.log("🎉 Process completed successfully!");
