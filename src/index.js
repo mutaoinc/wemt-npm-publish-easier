@@ -216,7 +216,16 @@ Configuration file:
 }
 
 function incrementVersion(version) {
-    const [major, minor, patch] = version.split(".").map(Number);
+    const versionParts = version.split(".");
+    if (versionParts.length !== 3) {
+        throw new Error(`Invalid version format: ${version}. Expected format: x.y.z`);
+    }
+    
+    const [major, minor, patch] = versionParts.map(Number);
+    if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
+        throw new Error(`Invalid version format: ${version}. All parts must be numbers`);
+    }
+    
     return `${major}.${minor}.${patch + 1}`;
 }
 
@@ -241,13 +250,22 @@ async function copyFiles(copyConfig, publishPath) {
                 continue;
             }
 
+            // 确保目标目录存在
+            const targetDir = config.type === "file" ? join(target, "..") : target;
+            mkdirSync(targetDir, { recursive: true });
+
             if (config.type === "file") {
                 copyFileSync(source, target);
             } else if (config.type === "dir") {
                 await cp(source, target, { recursive: true, force: true });
+            } else {
+                console.warn(`⚠️  Warning: Unknown copy type: ${config.type}`);
+                continue;
             }
+            
+            console.log(`   ✅ ${config.description} copied successfully`);
         } catch (error) {
-            console.error(`❌ Error copying ${config.description}:`, error);
+            console.error(`❌ Error copying ${config.description}:`, error.message);
             throw error;
         }
     }
@@ -339,6 +357,22 @@ async function main() {
             process.exit(1);
         }
 
+        // 验证复制配置格式
+        if (finalConfig.copyConfig && Array.isArray(finalConfig.copyConfig)) {
+            for (const config of finalConfig.copyConfig) {
+                if (!config.type || !config.source || !config.target) {
+                    console.error("❌ Configuration error: Invalid copyConfig format!");
+                    console.log("📝 Each copyConfig item must have: type, source, target");
+                    console.log("   Example: { type: 'file', source: 'LICENSE', target: 'LICENSE', description: 'LICENSE file' }");
+                    process.exit(1);
+                }
+                if (!['file', 'dir'].includes(config.type)) {
+                    console.error(`❌ Configuration error: Invalid copy type '${config.type}'. Must be 'file' or 'dir'`);
+                    process.exit(1);
+                }
+            }
+        }
+
         // 计算发布路径
         const PUBLISH_PATH = finalConfig.publishDir ? join(ROOT_PATH, finalConfig.publishDir) : ROOT_PATH;
 
@@ -365,8 +399,14 @@ async function main() {
 
         // 构建项目
         console.log(`🔨 Building project with: ${finalConfig.buildCommand}`);
-        execCommand(finalConfig.buildCommand);
-        console.log("✅ Build completed");
+        try {
+            execCommand(finalConfig.buildCommand);
+            console.log("✅ Build completed");
+        } catch (error) {
+            console.error("❌ Build failed!");
+            console.error("Please check your build command and configuration.");
+            throw error;
+        }
 
         // 读取 package.json
         console.log("📄 Reading package.json...");
@@ -399,10 +439,32 @@ async function main() {
 
         // 自动发布
         if (args.autoPublish) {
+            // 发布前验证
+            const publishPackageJsonPath = join(PUBLISH_PATH, "package.json");
+            if (!existsSync(publishPackageJsonPath)) {
+                console.error("❌ package.json not found in publish directory!");
+                process.exit(1);
+            }
+
+            // 检查是否已登录 npm
+            try {
+                execSync("npm whoami", { stdio: "pipe" });
+            } catch (error) {
+                console.error("❌ Not logged in to npm!");
+                console.log("📝 Please run: npm login");
+                process.exit(1);
+            }
+
             // 直接发布（npm publish 会自动打包，不会留下 .tgz 文件）
             console.log("🚀 Publishing to npm...");
-            execCommand("npm publish", { cwd: PUBLISH_PATH });
-            console.log("✅ Package published successfully!");
+            try {
+                execCommand("npm publish", { cwd: PUBLISH_PATH });
+                console.log("✅ Package published successfully!");
+            } catch (error) {
+                console.error("❌ Publish failed!");
+                console.error("Please check your npm credentials and package configuration.");
+                throw error;
+            }
         }
 
         console.log("🎉 Process completed successfully!");

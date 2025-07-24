@@ -6,8 +6,6 @@ publish/
 
 # User configuration files (keep *.example.* files)
 publish.config.js
-.publishrc.js
-.publishrc.json
 
 # Logs
 *.log

@@ -147,6 +147,125 @@ export default {
 };
 ```
 
+### 🔧 构建文件路径配置
+
+**重要说明：** 构建输出路径必须与 `publishDir` 配置保持一致，或者通过 `copyConfig` 来处理构建文件的复制。
+
+#### 方案一：构建输出路径与 publishDir 一致（推荐）
+
+如果你的构建工具（如 rollup、webpack、vite 等）输出到 `dist` 目录，那么 `publishDir` 也应该设置为 `"dist"`：
+
+```javascript
+export default {
+  // 构建命令输出到 dist 目录
+  buildCommand: "npm run build", // 假设这个命令输出到 dist/
+  
+  // 发布目录设置为 dist，与构建输出一致
+  publishDir: "dist",
+  
+  // 其他文件通过 copyConfig 复制到 dist 目录
+  copyConfig: [
+    {
+      type: "file",
+      source: "LICENSE",
+      target: "LICENSE",
+      description: "LICENSE 文件",
+    },
+    {
+      type: "file", 
+      source: "README.md",
+      target: "README.md",
+      description: "README 文档",
+    }
+  ]
+};
+```
+
+#### 方案二：通过 copyConfig 复制构建文件
+
+如果构建输出到其他目录（如 `lib`、`build` 等），可以通过 `copyConfig` 将构建文件复制到发布目录：
+
+```javascript
+export default {
+  buildCommand: "npm run build", // 输出到 lib/ 目录
+  publishDir: "publish",
+  
+  copyConfig: [
+    // 复制构建输出的文件
+    {
+      type: "dir",
+      source: "lib",        // 构建输出目录
+      target: "lib",        // 发布目录中的目标路径
+      description: "构建输出文件",
+    },
+    // 复制其他必要文件
+    {
+      type: "file",
+      source: "LICENSE",
+      target: "LICENSE", 
+      description: "LICENSE 文件",
+    }
+  ]
+};
+```
+
+#### 方案三：直接在当前目录发布
+
+如果构建直接输出到项目根目录，可以设置 `publishDir` 为空字符串：
+
+```javascript
+export default {
+  buildCommand: "npm run build", // 直接输出到根目录
+  publishDir: "",                // 在当前目录发布
+  
+  // 不需要复制构建文件，因为已经在正确位置
+  copyConfig: [
+    // 只需要复制其他必要文件（如果需要的话）
+  ]
+};
+```
+
+#### 常见构建工具配置示例
+
+**Rollup 配置示例：**
+```javascript
+// rollup.config.js
+export default {
+  input: 'src/index.js',
+  output: {
+    file: 'publish/index.js',  // 直接输出到发布目录
+    format: 'esm',
+    banner: '#!/usr/bin/env node\n'  // CLI 工具需要的 shebang
+  }
+};
+
+// publish.config.js
+export default {
+  buildCommand: "rollup -c",
+  publishDir: "publish",  // 与 rollup 输出路径一致
+  // ...
+};
+```
+
+**Webpack 配置示例：**
+```javascript
+// webpack.config.js
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),  // 输出到 dist 目录
+    filename: 'bundle.js'
+  }
+};
+
+// publish.config.js
+export default {
+  buildCommand: "webpack --mode=production",
+  publishDir: "dist",  // 与 webpack 输出路径一致
+  // ...
+};
+```
+
 ## 📋 参数说明
 
 | 参数                     | 简写 | 说明                           |
@@ -170,11 +289,12 @@ export default {
 1. 确保已登录 npm 账户：`npm login`
 2. 确保 package.json 中的 name 字段正确
 3. 首次发布需要确保包名没有被占用
-4. 建议在发布前先测试：`npm run publish:prepare`
-5. 工具依赖构建工具进行构建，请确保构建配置正确
-6. 版本号遵循 semver 规范，仅自动递增 patch 版本
-7. 使用 `--clean` 命令会完全删除发布目录，请谨慎使用
-8. 工具具有完整的跨平台兼容性，在 Windows、macOS 和 Linux 上均可正常使用
+4. **重要：** 构建输出路径必须与 `publishDir` 配置一致，或通过 `copyConfig` 处理构建文件复制
+5. 建议在发布前先测试：`npm run publish:prepare`
+6. 工具依赖构建工具进行构建，请确保构建配置正确
+7. 版本号遵循 semver 规范，仅自动递增 patch 版本
+8. 使用 `--clean` 命令会完全删除发布目录，请谨慎使用
+9. 工具具有完整的跨平台兼容性，在 Windows、macOS 和 Linux 上均可正常使用
 
 ## 🤝 贡献
 
