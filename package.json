@@ -1,7 +1,7 @@
 {
   "name": "@wemt/npm-publish-easier",
-  "version": "1.1.9",
-  "description": "一个简化npm包发布流程助手工具，支持自动构建、版本管理、文件复制和发布。",
+  "version": "1.1.11",
+  "description": "An enhanced npm package publishing automation tool that supports intelligent building, version management, file copying, and one-click publishing.",
   "main": "index.js",
   "bin": {
     "npm-publish-easier": "index.js"
@@ -19,7 +19,10 @@
     "version",
     "package",
     "build",
-    "deploy"
+    "deploy",
+    "enhanced",
+    "workflow",
+    "cli"
   ],
   "author": "Mutaoinc & Wemt Team",
   "license": "MIT",
@@ -36,7 +39,6 @@
     "url": "https://github.com/mutaoinc/wemt-npm-publish-easier/issues"
   },
   "devDependencies": {
-    "@wemt/npm-publish-easier": "^1.1.8",
     "rollup": "^4.44.1"
   },
   "publishConfig": {
