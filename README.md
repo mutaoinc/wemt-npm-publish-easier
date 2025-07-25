@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@wemt%2Fnpm-publish-easier.svg)](https://badge.fury.io/js/@wemt%2Fnpm-publish-easier) [![Node.js Version](https://img.shields.io/node/v/@wemt/npm-publish-easier.svg)](https://nodejs.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**简体中文** | [English](./README.en.md)
+**简体中文** | [English](./README_en.md)
 
 一个增强 npm 包发布流程的自动化工具，支持智能构建、版本管理、文件复制和一键发布。
 
